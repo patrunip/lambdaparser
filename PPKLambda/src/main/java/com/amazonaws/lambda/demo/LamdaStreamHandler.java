@@ -23,6 +23,9 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 
     //JSONParser parser = new JSONParser();
 
+	private final String BUCKET_NAME = "pk-poc-ec-templates";
+	private final String OBJECT_ID = "DMIReferenceData.json";
+	
 	
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
@@ -55,7 +58,7 @@ public class LamdaStreamHandler implements RequestStreamHandler {
          	LambdaLogger awsLogger = context.getLogger();
          	awsLogger.log(" Logging to CloudWatch  ");
          	//S3Object s3 = readFromS3("poc-dmi-reference-data", "DMIReferenceData.json");
-         	JSONObject s3 = readFromS3("pk-poc-ec-templates", "DMIReferenceData.json");
+         	JSONObject s3 = readFromS3(BUCKET_NAME, OBJECT_ID);
          	//sendFiletoQueue(s3);
          	org.json.simple.JSONObject responObj = new org.json.simple.JSONObject();
          	responObj.put("body", s3.toString());
@@ -74,25 +77,12 @@ public class LamdaStreamHandler implements RequestStreamHandler {
     	S3Object s3object = null;
     	JSONObject json = null;
     	try {
-		
+    		System.out.println("Fetching Object Details ");
     		String clientRegion = "us-east-1";
-    		System.out.println("1");
     		AmazonS3 s3Client = AmazonS3ClientBuilder.standard().withRegion(clientRegion).build();
-    		//GetObjectRequest objReq = new GetObjectRequest(bucketName, key).withRange(0, 9);
-    		//System.out.println(" Get Bucket Name"+objReq.getBucketName()+"  TimeOut"+objReq.getSdkClientExecutionTimeout().intValue());
-    		//objReq.setSdkRequestTimeout(60000);
-    		//s3object = s3Client.getObject(new GetObjectRequest(bucketName, key));
-    		//System.out.println(" Getting Object Now String with Range Obj Req  "+objReq);
-    		//System.out.println(" Get bucket Name "+objReq.getBucketName());
-    		//System.out.println(" Get bucket NameReq Time Out-Setting Time Out "+objReq.getSdkRequestTimeout());
-    		//objReq.setSdkRequestTimeout(50000);
-    		//String objectString = s3Client.getObjectAsString(bucketName, key);
-    		//System.out.println(" Getting Object Now "+objectString);
-    		//s3object = s3Client.getObject(objReq);
-    		
-    		System.out.println("3");
+    		System.out.println(" Fetching S3Client ");
         	InputStream is = s3Client.getObject(bucketName, key).getObjectContent();
-        	System.out.println("4");
+        	System.out.println(" Fetching S3Client ");
         	String jsonTxt = IOUtils.toString(is);
         	//System.out.println("JSON TEXT"+jsonTxt);
         	json = new JSONObject(jsonTxt);
