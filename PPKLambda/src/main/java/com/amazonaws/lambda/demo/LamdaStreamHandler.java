@@ -30,10 +30,14 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 
 	// JSONParser parser = new JSONParser();
 
-	private final String BUCKET_NAME = "pk-poc-ec-templates";//"pk-poc-ec-templates or app-test-poc-bucket";
+	private final String BUCKET_NAME = "app-test-poc-bucket";//"pk-poc-ec-templates or app-test-poc-bucket";
 	private final String OBJECT_ID = "DMIReferenceData.json";
 	private static String REGION = "us-east-1";
 
+	/**
+	 * To Test Locally
+	 * @param ara
+	 */
 	public static void main(String ara[]) {
 		LamdaStreamHandler objStream = new LamdaStreamHandler();
 		InputStream ioStream = new InputStream() {
@@ -59,10 +63,13 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 			e.printStackTrace();
 		}
 	}
+
+	
 	@Override
 	@SuppressWarnings("unchecked")
 	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
 
+		OutputStreamWriter writer = null;
 		try {
 			sop(" Reading DMI from S3 Bucket and Displaying Aircraft ID");
 			if(context!=null){
@@ -76,14 +83,16 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 
 			// Create JSON Object using the JSON String
 			org.json.simple.JSONObject responObj = new org.json.simple.JSONObject();
-			responObj.put("body", s3.toString());
+			responObj.put("body", "Aircraft Data Read and Processed ");
 
 			// Stream out the JSON response
-			OutputStreamWriter writer = new OutputStreamWriter(output, "UTF-8");
+			writer = new OutputStreamWriter(output, "UTF-8");
 			writer.write(responObj.toJSONString());
 			writer.close();
 		} catch (Exception e) {
 			System.err.println("Exception in Handle Request : " + e);
+			writer.write("Error While Processing. Please check logs");
+			writer.close();
 		}
 
 	}
@@ -95,7 +104,7 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 	 * @return
 	 * @throws IOException
 	 */
-	private JSONObject readFromS3(String bucketName, String key) throws IOException {
+	private JSONObject readFromS3(String bucketName, String key) throws IOException,Exception {
 		JSONObject json = null;
 		JSONObject aircraftJSON = null;
 		try {
@@ -114,11 +123,17 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 		} catch (Exception e) {
 			sop(" Exception " + e);
 			e.printStackTrace();
+			throw new Exception("Error While Processing. Please check logs for more details");
 		}
 
 		return aircraftJSON;
 	}
 	
+	/**
+	 * 
+	 * @param incomingJSON
+	 * @return
+	 */
 	private JSONObject getAircraftTypes(JSONObject incomingJSON) {
 		
 		List<AircraftTypes> listAircraft = new ArrayList<AircraftTypes>();
@@ -140,7 +155,14 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 		
 	}
 	
-	public List<JSONObject> parseJsonData(JSONObject obj, String pattern) throws JSONException {
+	/**
+	 * 
+	 * @param obj
+	 * @param pattern
+	 * @return
+	 * @throws JSONException
+	 */
+	private List<JSONObject> parseJsonData(JSONObject obj, String pattern) throws JSONException {
 
 		List<JSONObject> listObjs = new ArrayList<JSONObject>();
 		JSONArray geodata = obj.getJSONArray(pattern);
@@ -150,11 +172,11 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 		}
 		return listObjs;
 	}
-/**
- * 
- * @param jsonObj
- */
-	
+
+	/**
+	 * Send Individual Aircraft Types to Q
+	 * @param jsonObj
+	 */
 	private void sendMessageToQueue(JSONObject jsonObj) {
 		String queueName = "POCInboundQ";
 		sop(" Creating SQS Objects ");
@@ -172,6 +194,10 @@ public class LamdaStreamHandler implements RequestStreamHandler {
 
 	}
 	
+	/**
+	 * Temp Usage for SOP. Will be replaced by CloudWatch
+	 * @param message
+	 */
 	private void sop(String message) {
 		System.out.println(message);
 	}
